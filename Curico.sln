@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35122.118
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Curico.Windows", "Curico.Windows\Curico.Windows.csproj", "{852B4ACC-4530-444F-97D1-20F1EF50E93E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Curico.Windows", "Curico.Windows\Curico.Windows.csproj", "{852B4ACC-4530-444F-97D1-20F1EF50E93E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Curico.Core", "Curico.Core\Curico.Core.csproj", "{8E1EAF96-2963-48C2-A245-61B8BA4F938A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Curico.Core", "Curico.Core\Curico.Core.csproj", "{8E1EAF96-2963-48C2-A245-61B8BA4F938A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Curico.CLI", "Curico.Console\Curico.CLI.csproj", "{F7C16892-7275-4672-8233-33FC98BAC74A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{8E1EAF96-2963-48C2-A245-61B8BA4F938A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8E1EAF96-2963-48C2-A245-61B8BA4F938A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8E1EAF96-2963-48C2-A245-61B8BA4F938A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7C16892-7275-4672-8233-33FC98BAC74A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7C16892-7275-4672-8233-33FC98BAC74A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7C16892-7275-4672-8233-33FC98BAC74A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7C16892-7275-4672-8233-33FC98BAC74A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

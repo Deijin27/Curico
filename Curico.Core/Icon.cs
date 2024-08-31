@@ -1,40 +1,16 @@
 ﻿using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Bmp;
 using SixLabors.ImageSharp.PixelFormats;
-using System.Runtime.InteropServices;
 
 namespace Curico.Core;
 
 public class Icon
 {
-    private struct Header
-    {
-        public const int Length = 6;
-
-        public ushort Reserved;
-        public ushort Format;
-        public ushort ImageCount;
-
-        public Header(BinaryReader br)
-        {
-            Reserved = br.ReadUInt16();
-            Format = br.ReadUInt16();
-            ImageCount = br.ReadUInt16();
-        }
-
-        public void WriteTo(BinaryWriter bw)
-        {
-            bw.Write(Reserved);
-            bw.Write(Format);
-            bw.Write(ImageCount);
-        }
-    }
-
     public IconFormat Format { get; set; }
+    public List<IconImage> Images { get; } = [];
 
     public Icon()
     {
-
     }
 
     public Icon(BinaryReader br)
@@ -59,19 +35,106 @@ public class Icon
 
     }
 
+    private struct Header
+    {
+        public const int Length = 6;
+
+        public ushort Reserved;
+        public ushort Format;
+        public ushort ImageCount;
+
+        public Header(BinaryReader br)
+        {
+            Reserved = br.ReadUInt16();
+            Format = br.ReadUInt16();
+            ImageCount = br.ReadUInt16();
+        }
+
+        public void WriteTo(BinaryWriter bw)
+        {
+            bw.Write(Reserved);
+            bw.Write(Format);
+            bw.Write(ImageCount);
+        }
+    }
+
     public void Save(string file)
     {
         using var bw = new BinaryWriter(File.Create(file));
         WriteTo(bw);
     }
 
+    private void ValidateAndStandardiseImages()
+    {
+        Images.Sort((a, b) => b.Image.Width.CompareTo(a.Image.Width));
+
+        // Validate image sizes
+        var validSizes = new[] { 128, 96, 64, 48, 32 };
+        if (!(Images.Select(x => x.Image.Width).SequenceEqual(validSizes) && Images.Select(x => x.Image.Height).SequenceEqual(validSizes)))
+        {
+            throw new Exception("You must provide one image of each size: 128x128, 96x96, 64x64, 48x48, 32x32");
+        }
+
+        if (Format == IconFormat.CUR)
+        {
+            // Validate cursor hotspots
+            foreach (var image in Images)
+            {
+                if (image.Hotspot.X < 0 || image.Hotspot.Y < 0 || image.Hotspot.X >= image.Image.Width || image.Hotspot.Y >= image.Image.Height)
+                {
+                    throw new Exception($"Cursor hotspot was not in bounds for the {image.Image.Width}x{image.Image.Height} image");
+                }
+            }
+        }
+
+        // Make all the full transparency be black
+        // Not necessary, but it's neat
+        foreach (var image in Images)
+        {
+            NormalizeTransparency(image.Image);
+        }
+    }
+
+    private static void NormalizeTransparency(Image<Rgba32> image)
+    {
+        image.ProcessPixelRows(accessor =>
+        {
+            for (int y = 0; y < accessor.Height; y++)
+            {
+                foreach (ref var pixel in accessor.GetRowSpan(y))
+                {
+                    if (pixel.A == 0)
+                    {
+                        pixel.R = 0;
+                        pixel.G = 0;
+                        pixel.B = 0;
+                    }
+                }
+            }
+        });
+        //for (int x = 0; x < image.Width; x++)
+        //{
+        //    for (int y = 0; y < image.Height; y++)
+        //    {
+        //        var pixel = image[x, y];
+        //        if (pixel.A == 0)
+        //        {
+        //            image[x, y] = Color.Transparent;
+        //        }
+        //    }
+        //}
+    }
+
     public void WriteTo(BinaryWriter bw)
     {
+        ValidateAndStandardiseImages();
         var startOffset = bw.BaseStream.Position;
 
-        var header = new Header();
-        header.Format = (ushort)Format;
-        header.ImageCount = (ushort)Images.Count;
+        var header = new Header
+        {
+            Format = (ushort)Format,
+            ImageCount = (ushort)Images.Count
+        };
 
         header.WriteTo(bw);
 
@@ -206,12 +269,12 @@ public class Icon
         /// <summary>
         /// Number of colors in the image
         /// </summary>
-        uint ColorsUsed;
+        public uint ColorsUsed;
 
         /// <summary>
         /// Minimum number of important color
         /// </summary>
-        uint ColorsImportant;
+        public uint ColorsImportant;
 
         public BitmapSubHeader(BinaryReader br)
         {
@@ -281,6 +344,4 @@ public class Icon
         });
         return mask;
     }
-
-    public List<IconImage> Images { get; } = [];
 }

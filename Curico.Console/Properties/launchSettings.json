@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Curico.Console": {
+      "commandName": "Project",
+      "commandLineArgs": "-h"
+    }
+  }
+}
