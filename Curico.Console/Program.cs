@@ -117,7 +117,7 @@ internal class Program
     {
         var version = Assembly.GetEntryAssembly()!.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion;
         Console.WriteLine($"""
-            Curico v{version}"
+            Curico v{version}
 
             A command-line tool to convert pngs to windows Icon or Cursor files.
 
