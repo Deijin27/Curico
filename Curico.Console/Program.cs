@@ -2,6 +2,7 @@
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Reflection;
+using SixLabors.ImageSharp.Processing;
 
 namespace Curico.CLI;
 
@@ -20,7 +21,7 @@ internal class Program
         var icon = new Icon();
         
         string outputFormat = argCol.GetRequiredParameter(0);
-        string imageDir = argCol.GetRequiredParameter(1);
+        string inputPath = argCol.GetRequiredParameter(1);
         string? outputPath = argCol.GetOption("--output");
         string? hotspotString = argCol.GetOption("--hotspots");
 
@@ -42,20 +43,28 @@ internal class Program
 
         outputPath ??= "output" + ext;
 
-        var images = new Dictionary<int, IconImage>();
-        foreach (var file in Directory.GetFiles(imageDir, "*.png"))
+        Dictionary<int, IconImage> images;
+        if (Directory.Exists(inputPath))
         {
-            try
+            // Folder input: load sizes from files in folder
+            images = [];
+            foreach (var file in Directory.GetFiles(inputPath, "*.png"))
             {
-                var image = Image.Load<Rgba32>(file);
+                var image = LoadImage(file);
                 images[image.Width] = new IconImage(image);
             }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error loading image {file}", ex);
-            }
         }
-
+        else if (File.Exists(inputPath))
+        {
+            // File input: generate different sizes
+            var image = LoadImage(inputPath);
+            images = GenerateImageSizes(image, [16, 24, 32, 48, 64, 96, 128, 256]);
+        }
+        else
+        {
+            throw new FileNotFoundException(inputPath);
+        }
+        
         if (icon.Format == IconFormat.CUR && !string.IsNullOrEmpty(hotspotString))
         {
             foreach (var kvp in LoadHotspots(hotspotString))
@@ -69,6 +78,25 @@ internal class Program
 
         icon.Images.AddRange(images.Values);
         icon.Save(outputPath);
+    }
+
+    private static Image<Rgba32> LoadImage(string filePath)
+    {
+        Image<Rgba32> image;
+        try
+        {
+            image = Image.Load<Rgba32>(filePath);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading image '{filePath}'", ex);
+        }
+        if (image.Width != image.Height)
+        {
+            throw new Exception($"Image '{filePath}' is invalid size {image.Width}x{image.Height}. Images must have same width as height.");
+        }
+        return image;
+        
     }
 
     private static Dictionary<int, Point> LoadHotspots(string coordString)
@@ -111,6 +139,23 @@ internal class Program
         }
 
         return hotspots;
+    }
+
+    private static Dictionary<int, IconImage> GenerateImageSizes(Image<Rgba32> image, int[] sizes)
+    {
+        var result = new Dictionary<int, IconImage>();
+        foreach (var size in sizes)
+        {
+            if (image.Width == size)
+            {
+                result[size] = new IconImage(image);
+            }
+            else
+            {
+                result[size] = new IconImage(image.Clone(g => g.Resize(size, size)));
+            }
+        }
+        return result;
     }
 
     private static void DisplayHelp()
