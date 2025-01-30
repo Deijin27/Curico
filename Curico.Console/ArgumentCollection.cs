@@ -11,7 +11,7 @@ internal class ArgumentCollection
     {
         foreach (var arg in args)
         {
-            if (arg.StartsWith("--") || arg.StartsWith('-'))
+            if (arg.StartsWith('-'))
             {
                 var splitIndex = arg.IndexOf('=');
                 if (splitIndex > 0)
