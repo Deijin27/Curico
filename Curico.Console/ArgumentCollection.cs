@@ -2,13 +2,13 @@
 
 internal class ArgumentCollection
 {
-    public int Count => _argDictionary.Count;
+    public int Count => _argDictionary.Count + _parameterList.Count;
+    public int ParameterCount => _parameterList.Count;
 
-    private readonly Dictionary<string, string> _argDictionary;
+    private readonly Dictionary<string, string> _argDictionary = [];
+    private readonly List<string> _parameterList = [];
     public ArgumentCollection(string[] args)
     {
-        _argDictionary = [];
-
         foreach (var arg in args)
         {
             if (arg.StartsWith("--") || arg.StartsWith('-'))
@@ -25,15 +25,19 @@ internal class ArgumentCollection
                     _argDictionary[arg] = string.Empty; // for flags like --help
                 }
             }
+            else
+            {
+                _parameterList.Add(arg);
+            }
         }
     }
 
-    public bool HasArg(string arg)
+    public bool HasOption(string arg)
     {
         return _argDictionary.ContainsKey(arg);
     }
 
-    public string? GetOptional(string key)
+    public string? GetOption(string key)
     {
         if (_argDictionary.TryGetValue(key, out var value))
         {
@@ -42,12 +46,31 @@ internal class ArgumentCollection
         return null;
     }
 
-    public string GetRequired(string key)
+    public string GetRequiredOption(string key)
     {
-        var value = GetOptional(key);
+        var value = GetOption(key);
         if (value == null)
         {
             throw new Exception($"Missing required arg '{key}'");
+        }
+        return value;
+    }
+
+    public string? GetParameter(int index)
+    {
+        if (_parameterList.Count > index)
+        {
+            return _parameterList[index];
+        }
+        return null;
+    }
+
+    public string GetRequiredParameter(int index)
+    {
+        var value = GetParameter(index);
+        if (value == null)
+        {
+            throw new Exception($"Missing required parameter {index}");
         }
         return value;
     }
