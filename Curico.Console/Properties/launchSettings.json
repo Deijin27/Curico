@@ -2,7 +2,7 @@
   "profiles": {
     "Curico.Console": {
       "commandName": "Project",
-      "commandLineArgs": "-h"
+      "commandLineArgs": "info \"C:\\Users\\Mia\\Desktop\\test\\explorer_0000.ico\" --output=\"C:\\Users\\Mia\\Desktop\\test\\output\""
     }
   }
 }

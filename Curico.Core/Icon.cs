@@ -1,6 +1,9 @@
-﻿using SixLabors.ImageSharp;
+﻿#define CATCH
+
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Bmp;
 using SixLabors.ImageSharp.PixelFormats;
+using System.Xml.Linq;
 
 namespace Curico.Core;
 
@@ -11,6 +14,20 @@ public class Icon
 
     public Icon()
     {
+    }
+
+    public static XElement DumpMetadata(BinaryReader br)
+    {
+        var e = new XElement("Icon");
+        var header = new Header(br);
+        header.DumpMetadata(e);
+
+        for (int i = 0; i < header.ImageCount; i++)
+        {
+            var item = new IconImageInfo(br);
+            e.Add(item.DumpMetadata((IconFormat)header.Format));
+        }
+        return e;
     }
 
     public Icon(BinaryReader br)
@@ -31,8 +48,84 @@ public class Icon
             var info = imageInfos[i];
             br.BaseStream.Position = startOffset + info.OffsetToData;
             var data = br.ReadBytes(info.SizeImgAndMaskData);
-        }
+            using var ms = new MemoryStream();
+            using var memBr = new BinaryReader(ms);
+            using var memBw = new BinaryWriter(ms);
 
+            // add back header
+            var bmpHeader = new BitmapHeader
+            {
+                Signature = 0x4D42,
+                FileSize = (uint)(BitmapHeader.Length + data.Length),
+                FileOffsetToPixelArray = BitmapHeader.Length + BitmapSubHeader.Length
+            };
+            ms.Seek(BitmapHeader.Length, SeekOrigin.Begin);
+
+            // Write the data
+            memBw.Write(data);
+
+            // tweak values (do we actually need to do this? might just be able to read the file after adding header back in)
+
+            ms.Seek(BitmapHeader.Length, SeekOrigin.Begin);
+            var subHeader = new BitmapSubHeader(memBr);
+            subHeader.Height /= 2;
+            subHeader.HorzResolution = 0;
+            subHeader.VertResolution = 0;
+            bmpHeader.FileOffsetToPixelArray += subHeader.ColorsUsed * subHeader.BitsPerPixel / 8;
+            ms.Seek(BitmapHeader.Length, SeekOrigin.Begin);
+            subHeader.WriteTo(memBw);
+
+            // Write header
+            ms.Seek(0, SeekOrigin.Begin);
+            bmpHeader.WriteTo(memBw);
+
+            File.WriteAllBytes(@$"C:\Users\Mia\Desktop\test\test-{info.Width}.bmp", ms.ToArray());
+            // load bitmap
+
+
+
+            ms.Seek(0, SeekOrigin.Begin);
+            // Catch for testing, sometimes crashes for one from the file image (the aero_arrow_xl.cur)
+#if CATCH
+            try
+            {
+#endif
+                var img = Image.Load<Rgba32>(ms);
+                var iconImage = new IconImage(img);
+                Images.Add(iconImage);
+
+                if (Format == IconFormat.CUR)
+                {
+                    iconImage.Hotspot = new Point(info.Var1, info.Var2);
+                }
+#if CATCH
+            }
+            catch
+            {
+
+            }
+#endif
+        }
+    }
+
+    private struct BitmapHeader
+    {
+        public const int Length = 14;
+
+        public ushort Signature;
+        public uint FileSize;
+        public ushort Reserved1;
+        public ushort Reserved2;
+        public uint FileOffsetToPixelArray;
+
+        public void WriteTo(BinaryWriter bw)
+        {
+            bw.Write(Signature);
+            bw.Write(FileSize);
+            bw.Write(Reserved1);
+            bw.Write(Reserved2);
+            bw.Write(FileOffsetToPixelArray);
+        }
     }
 
     private struct Header
@@ -55,6 +148,13 @@ public class Icon
             bw.Write(Reserved);
             bw.Write(Format);
             bw.Write(ImageCount);
+        }
+
+        public void DumpMetadata(XElement e)
+        {
+            e.Add(new XAttribute("Reserved", Reserved));
+            e.Add(new XAttribute("Format", (IconFormat)Format));
+            e.Add(new XAttribute("ImageCount", ImageCount));
         }
     }
 
@@ -179,11 +279,10 @@ public class Icon
                 using var memBw = new BinaryWriter(ms);
 
                 image.Image.SaveAsBmp(memBw.BaseStream, new BmpEncoder() { BitsPerPixel = BmpBitsPerPixel.Pixel32 });
-                const int bmpHeaderLen = 14;
 
                 // The subheader, which starts immediately after the main header
                 // needs to be modified slightly
-                ms.Seek(bmpHeaderLen, SeekOrigin.Begin);
+                ms.Seek(BitmapHeader.Length, SeekOrigin.Begin);
                 var subHeader = new BitmapSubHeader(memBr);
                 subHeader.Height *= 2; // needs to be doubled for some reason. Maybe because of the mask idk
                 if (mask != null)
@@ -193,12 +292,12 @@ public class Icon
                 }
                 subHeader.HorzResolution = 0;
                 subHeader.VertResolution = 0;
-                ms.Seek(bmpHeaderLen, SeekOrigin.Begin);
+                ms.Seek(BitmapHeader.Length, SeekOrigin.Begin);
                 subHeader.WriteTo(memBw);
 
                 // strip header and write to main stream
                 var bmpBytes = ms.ToArray();
-                bw.Write(bmpBytes, bmpHeaderLen, bmpBytes.Length - bmpHeaderLen);
+                bw.Write(bmpBytes, BitmapHeader.Length, bmpBytes.Length - BitmapHeader.Length);
             }
 
             if (mask != null)
@@ -275,6 +374,8 @@ public class Icon
         /// Minimum number of important color
         /// </summary>
         public uint ColorsImportant;
+
+        public const int Length = 40;
 
         public BitmapSubHeader(BinaryReader br)
         {

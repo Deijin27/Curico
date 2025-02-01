@@ -1,4 +1,6 @@
-﻿namespace Curico.Core;
+﻿using System.Xml.Linq;
+
+namespace Curico.Core;
 
 internal struct IconImageInfo
 {
@@ -35,5 +37,29 @@ internal struct IconImageInfo
         bw.Write(Var2);
         bw.Write(SizeImgAndMaskData);
         bw.Write(OffsetToData);
+    }
+
+    public XElement DumpMetadata(IconFormat format)
+    {
+        var e = new XElement("Image");
+
+        e.Add(new XAttribute("Size", $"{Width}x{Height}"));
+
+        if (format == IconFormat.CUR)
+        {
+            e.Add(new XAttribute("Hotspot", $"{Var1},{Var2}"));
+        }
+        else
+        {
+            e.Add(new XAttribute("Var1", Var1));
+            e.Add(new XAttribute("Var2", Var2));
+        }
+
+        e.Add(new XAttribute("Palette", Palette));
+        e.Add(new XAttribute("Reserved", Reserved));
+        e.Add(new XAttribute("SizeImgAndMaskData", SizeImgAndMaskData));
+        e.Add(new XAttribute("OffsetToData", OffsetToData));
+                
+        return e;
     }
 }

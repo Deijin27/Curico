@@ -18,12 +18,24 @@ internal class Program
             return;
         }
 
-        var icon = new Icon();
-        
         string outputFormat = argCol.GetRequiredParameter(0);
         string inputPath = argCol.GetRequiredParameter(1);
         string? outputPath = argCol.GetOption("--output");
         string? hotspotString = argCol.GetOption("--hotspots");
+
+        if (outputFormat == "info")
+        {
+            using var file = new BinaryReader(File.OpenRead(inputPath));
+            Console.WriteLine(Icon.DumpMetadata(file));
+            return;
+        }
+        if (outputFormat == "export")
+        {
+            Export(inputPath, outputPath);
+            return;
+        }
+
+        var icon = new Icon();
 
         string ext;
         if (outputFormat == "cur")
@@ -78,6 +90,31 @@ internal class Program
 
         icon.Images.AddRange(images.Values);
         icon.Save(outputPath);
+    }
+
+    private static void Export(string inputPath, string? outputPath)
+    {
+        outputPath ??= "output";
+
+        Icon icon;
+        using (var stream = new BinaryReader(File.OpenRead(inputPath)))
+        {
+            icon = new Icon(stream);
+        }
+
+        Directory.CreateDirectory(outputPath);
+
+        foreach (var image in icon.Images)
+        {
+            // maybe necessary: new PngEncoder() { ColorType = PngColorType.RgbWithAlpha }
+            image.Image.SaveAsPng(Path.Combine(outputPath, image.Image.Width.ToString() + ".png"));
+        }
+
+        if (icon.Format == IconFormat.CUR)
+        {
+            var hotspots = string.Join(';', icon.Images.Select(x => $"{x.Image.Width}:{x.Hotspot.X},{x.Hotspot.Y}"));
+            File.WriteAllText(Path.Combine(outputPath, "hotspots.txt"), hotspots);
+        }
     }
 
     private static Image<Rgba32> LoadImage(string filePath)
