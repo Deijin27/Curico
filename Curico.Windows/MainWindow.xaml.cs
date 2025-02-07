@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using Curico.Windows.ViewModel;
+using System.Windows;
 
 namespace Curico.Windows;
 /// <summary>

@@ -6,11 +6,61 @@
         xmlns:local="clr-namespace:Curico.Windows"
         xmlns:vm="clr-namespace:Curico.Windows.ViewModel"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" Cursor="{Binding Cursor}">
+        Title="Curico" Height="450" Width="800">
     <Window.DataContext>
         <vm:MainWindowViewModel/>
     </Window.DataContext>
     <Grid>
-        <Button Command="{Binding TestCommand}" VerticalAlignment="Center" HorizontalAlignment="Center" Content="Test"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <DockPanel Margin="5">
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock Text="Output Format"/>
+                <StackPanel Orientation="Horizontal">
+                    <ToggleButton IsChecked="True" Content="Icon (.ico)" Padding="5,0"/>
+                    <ToggleButton Content="Cursor (.cur)" Padding="5,0"/>
+
+                </StackPanel>
+            </StackPanel>
+            
+
+            <ScrollViewer Margin="0,5,5,5">
+                <ItemsControl ItemsSource="{Binding Images}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel Margin="0,0,5,5">
+                                <Border HorizontalAlignment="Center" VerticalAlignment="Center" DockPanel.Dock="Left" BorderThickness="1" BorderBrush="Gray">
+                                    <Image Stretch="Uniform" Width="48" Height="48" RenderOptions.BitmapScalingMode="NearestNeighbor" Source="{Binding ImageSrc}"/>
+                                </Border>
+
+                                <Border Padding="5" Background="LightGray" BorderThickness="0,1,1,1" BorderBrush="Gray">
+                                    <StackPanel >
+                                        <TextBlock FontWeight="DemiBold" Text="{Binding Size, StringFormat='{}{0}x{0}'}"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock>Hotspot</TextBlock>
+                                            <TextBox Margin="5,0,5,0" Text="{Binding HotspotX, UpdateSourceTrigger=PropertyChanged}" Width="30"/>
+                                            <TextBox Text="{Binding HotspotY, UpdateSourceTrigger=PropertyChanged}" Width="30"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            
+                            
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+            </ScrollViewer>
+
+        </DockPanel>
+
+        <Border Grid.Column="1" Width="150" Height="150" Background="LightGray" BorderBrush="Gray" BorderThickness="1" Padding="16" Cursor="{Binding Cursor}">
+            <TextBlock Text="Hover over this to test your cursor" TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+
+        <Button Grid.Column="1" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="5" Width="100" Command="{Binding GenerateCommand}">Generate</Button>
     </Grid>
+    
 </Window>

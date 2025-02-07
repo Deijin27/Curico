@@ -1,4 +1,5 @@
 ﻿using Curico.Core;
+using Microsoft.Win32;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
@@ -11,16 +12,18 @@ public class MainWindowViewModel : ViewModelBase
 {
     public ObservableCollection<ImageViewModel> Images { get; } = [];
 
+    public IconFormat Format { get; }
+
     public MainWindowViewModel()
     {
-        Images.Add(new ImageViewModel { ImagePath = @"C:\Users\Mia\Desktop\32x32.png" });
-        TestCommand = new RelayCommand(Test);
-        Test();
+        foreach (var image in Directory.GetFiles(@"C:\Users\Mia\Desktop\large\output", "*.png"))
+        {
+            Images.Add(new(image));
+        }
+        GenerateComamnd = new RelayCommand(Generate);
     }
 
-    public ICommand TestCommand { get; }
-
-    private Cursor _cursor = Cursors.Arrow;
+    private Cursor _cursor = Cursors.Hand;
     public Cursor Cursor
     {
         get => _cursor;
@@ -51,9 +54,87 @@ public class MainWindowViewModel : ViewModelBase
         var cur = new Cursor(saveFile, true);
         Cursor = cur;
     }
+
+    public ICommand GenerateComamnd { get; }
+
+    private void Generate()
+    {
+        var filePicker = new SaveFileDialog();
+        filePicker.DefaultExt = Format.GetExtension();
+
+        if (filePicker.ShowDialog() != true)
+        {
+            return;
+        }
+
+        var path = filePicker.FileName;
+        if (string.IsNullOrEmpty(path))
+        {
+            return;
+        }
+
+        var icon = new Icon { Format = Format };
+        foreach (var image in Images)
+        {
+            icon.Images.Add(new IconImage(image.ImageShp, new Point(image.HotspotX, image.HotspotY)));
+        }
+        icon.Save(path);
+    }
 }
 
-public class ImageViewModel
+public class ImageViewModel : ViewModelBase
 {
-    public string? ImagePath { get; set; }
+    private int _hotspotX = 10;
+    private int _hotspotY = 10;
+    private Image<Rgba32> _image;
+
+    public ImageViewModel(string file)
+    {
+        _image = Image.Load<Rgba32>(file);
+        Size = _image.Width;
+        UpdateImage();
+        
+
+    }
+
+    
+
+    public int Size { get; }
+    public int HotspotX
+    {
+        get => _hotspotX;
+        set
+        {
+            if (SetProperty(ref _hotspotX, value))
+            {
+                UpdateImage();
+            }
+        }
+    }
+    public int HotspotY
+    {
+        get => _hotspotY;
+        set
+        {
+            if (SetProperty(ref _hotspotY, value))
+            {
+                UpdateImage();
+            }
+        }
+    }
+
+    private void UpdateImage()
+    {
+        using var cloned = _image.Clone();
+        cloned[HotspotX, HotspotY] = Color.Red;
+        ImageSrc = PathToImageSourceConverter.TryConvert(cloned);
+    }
+
+    private System.Windows.Media.ImageSource? _imageSrc;
+    public System.Windows.Media.ImageSource? ImageSrc
+    {
+        get => _imageSrc;
+        set => SetProperty(ref _imageSrc, value);
+    }
+    public Image<Rgba32> ImageShp { get => _image; private set => _image = value; }
 }

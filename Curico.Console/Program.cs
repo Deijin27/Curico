@@ -37,21 +37,20 @@ internal class Program
 
         var icon = new Icon();
 
-        string ext;
         if (outputFormat == "cur")
         {
             icon.Format = IconFormat.CUR;
-            ext = ".cur";
         }
         else if (outputFormat == "ico")
         {
             icon.Format = IconFormat.ICO;
-            ext = ".ico";
         }
         else
         {
             throw new Exception($"Unknown output format '{outputFormat}'. Should be 'cur' or 'ico'.");
         }
+
+        string ext = icon.Format.GetExtension();
 
         outputPath ??= "output" + ext;
 
