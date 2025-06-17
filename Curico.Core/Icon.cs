@@ -168,11 +168,12 @@ public class Icon
     {
         Images.Sort((a, b) => b.Image.Width.CompareTo(a.Image.Width));
 
-        // Validate image sizes
-        var validSizes = new[] { 128, 96, 64, 48, 32 };
-        if (!(Images.Select(x => x.Image.Width).SequenceEqual(validSizes) && Images.Select(x => x.Image.Height).SequenceEqual(validSizes)))
+        foreach (var img in Images)
         {
-            throw new Exception("You must provide one image of each size: 128x128, 96x96, 64x64, 48x48, 32x32");
+            if (img.Image.Width != img.Image.Height)
+            {
+                throw new Exception("Image provided was not square.");
+            }
         }
 
         if (Format == IconFormat.CUR)

@@ -7,7 +7,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Curico.Windows", "Curico.Wi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Curico.Core", "Curico.Core\Curico.Core.csproj", "{8E1EAF96-2963-48C2-A245-61B8BA4F938A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Curico.CLI", "Curico.Console\Curico.CLI.csproj", "{F7C16892-7275-4672-8233-33FC98BAC74A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Curico.CLI", "Curico.Console\Curico.CLI.csproj", "{F7C16892-7275-4672-8233-33FC98BAC74A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{C6548CC6-2343-474B-9321-6F55C31D480C}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

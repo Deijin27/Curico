@@ -22,6 +22,7 @@ internal class Program
         string inputPath = argCol.GetRequiredParameter(1);
         string? outputPath = argCol.GetOption("--output");
         string? hotspotString = argCol.GetOption("--hotspots");
+        string? generateSizes = argCol.GetOption("--sizes");
 
         if (outputFormat == "info")
         {
@@ -54,6 +55,12 @@ internal class Program
 
         outputPath ??= "output" + ext;
 
+        Dictionary<int, Point>? hotspots = null;
+        if (icon.Format == IconFormat.CUR && !string.IsNullOrEmpty(hotspotString))
+        {
+            hotspots = LoadHotspots(hotspotString);
+        }
+
         Dictionary<int, IconImage> images;
         if (Directory.Exists(inputPath))
         {
@@ -67,18 +74,32 @@ internal class Program
         }
         else if (File.Exists(inputPath))
         {
+            int[] sizes;
+            if (hotspots != null)
+            {
+                sizes = hotspots.Keys.ToArray();
+            }
+            else if (generateSizes != null)
+            {
+                sizes = LoadSizes(generateSizes).ToArray();
+            }
+            else
+            {
+                sizes = [256, 128, 96, 64, 48, 32, 16];
+            }
+
             // File input: generate different sizes
             var image = LoadImage(inputPath);
-            images = GenerateImageSizes(image, [16, 24, 32, 48, 64, 96, 128, 256]);
+            images = GenerateImageSizes(image, sizes);
         }
         else
         {
             throw new FileNotFoundException(inputPath);
         }
         
-        if (icon.Format == IconFormat.CUR && !string.IsNullOrEmpty(hotspotString))
+        if (hotspots != null)
         {
-            foreach (var kvp in LoadHotspots(hotspotString))
+            foreach (var kvp in hotspots)
             {
                 if (images.TryGetValue(kvp.Key, out var iconImage))
                 {
@@ -135,6 +156,27 @@ internal class Program
         
     }
 
+    private static List<int> LoadSizes(string sizeString)
+    {
+        var sizes = new List<int>();
+        var sizesStrings = sizeString.Split(';');
+        foreach (var s in sizesStrings)
+        {
+            if (!int.TryParse(s, out var intSize))
+            {
+                throw new Exception($"Invalid size '{s}' in sizes '{sizeString}'");
+            }
+
+            if (intSize < 16)
+            {
+                throw new Exception($"Invalid size '{intSize}' in sizes '{sizeString}'");
+            }
+
+            sizes.Add(intSize);
+        }
+        return sizes;
+    }
+
     private static Dictionary<int, Point> LoadHotspots(string coordString)
     {
         var hotspots = new Dictionary<int, Point>();
@@ -179,6 +221,11 @@ internal class Program
 
     private static Dictionary<int, IconImage> GenerateImageSizes(Image<Rgba32> image, int[] sizes)
     {
+        if (image.Width != image.Height)
+        {
+            throw new Exception("Provided image was not square");
+        }
+
         var result = new Dictionary<int, IconImage>();
         foreach (var size in sizes)
         {
@@ -203,7 +250,7 @@ internal class Program
             A command-line tool to convert pngs to windows Icon or Cursor files.
 
             Usage:
-              curico ico <inputPath> [--output=<path>]
+              curico ico <inputPath> [--output=<path>] [--sizes=<size;size;...]
               curico cur <inputPath> [--output=<path>] [--hotspots=<size:x,y;size:x,y;...>]
 
             Parameters:
@@ -214,6 +261,8 @@ internal class Program
               --output     (Optional) output file path. Default is 'output.ico'.
               --hotspots   (Optional) Only for cursors. Hotspots per image size. Omitted ones will be 0,0. If this option isn't passed, all will be 0,0.
                                Format: size1:x1,y1;size2:x2,y2;... e.g., 128:10,10;96:6,6
+              --sizes      (Optional) If you provide a single file, icon sizes to generate. Defaults to 256;128;96;64;48;32;16. Unnecessary if you provide hotspots list.
+                                      
             
             Examples:
               curico ico my_image.png --output=output.ico
