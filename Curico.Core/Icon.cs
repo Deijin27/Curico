@@ -79,7 +79,7 @@ public class Icon
             ms.Seek(0, SeekOrigin.Begin);
             bmpHeader.WriteTo(memBw);
 
-            File.WriteAllBytes(@$"C:\Users\Mia\Desktop\test\test-{info.Width}.bmp", ms.ToArray());
+            //File.WriteAllBytes(@$"C:\Users\Mia\Desktop\test\test-{info.Width}.bmp", ms.ToArray());
             // load bitmap
 
 

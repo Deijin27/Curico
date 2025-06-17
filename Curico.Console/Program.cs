@@ -267,6 +267,16 @@ internal class Program
             Examples:
               curico ico my_image.png --output=output.ico
               curico cur "/path/to/folder" --hotspots=128:10,10;96:6,6;64:4,4
+
+
+            Other functions:
+
+            View information about an icon:
+                curico info <iconPath/cursorPath>
+
+            Convert an icon to pngs:
+                curico export <iconPath/cursorPath> [--output=<outputFolder>]
+
             """);
     }
 }
